@@ -60,7 +60,9 @@ export function createResearcherMcpServer(runtime: ServiceRuntime, auth: AuthCon
         _meta: {
           ui: {
             csp: { connectDomains: [], resourceDomains: [] },
+            domain: "https://researcher-ai-mcp.onrender.com",
           },
+          "openai/widgetDescription": "Shows the active Researcher AI project, mock jobs, progress, and auditable artifacts.",
         },
       }],
     }),

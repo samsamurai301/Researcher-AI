@@ -40,6 +40,10 @@ describe("streamable HTTP MCP", () => {
       await client.connect(transport as unknown as Transport);
       const tools = await client.listTools();
       expect(tools.tools).toHaveLength(10);
+      const widget = await client.readResource({ uri: "ui://researcher-ai/dashboard.html" });
+      expect(widget.contents[0]?._meta).toMatchObject({
+        ui: { domain: "https://researcher-ai-mcp.onrender.com" },
+      });
       const result = await client.callTool({ name: "get_service_status", arguments: {} });
       expect(result.isError).not.toBe(true);
       expect(result.structuredContent).toMatchObject({ service: { runnerMode: "mock" } });
