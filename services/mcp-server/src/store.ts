@@ -8,6 +8,7 @@ import {
   readFile,
   readdir,
   realpath,
+  rm,
   rename,
   stat,
   writeFile,
@@ -109,6 +110,10 @@ export class ResearchStore {
 
   tenantDirectory(tenantId: string): string {
     return path.join(this.root, "tenants", tenantKey(tenantId));
+  }
+
+  async deleteTenant(tenantId: string): Promise<void> {
+    await rm(this.tenantDirectory(tenantId), { recursive: true, force: true });
   }
 
   projectDirectory(tenantId: string, projectId: string): string {

@@ -2,7 +2,7 @@ export const DISCLOSURE_TEXT =
   "This manuscript was autonomously generated or produced using The AI Scientist. Human reviewers remain responsible for verification, attribution, and publication decisions.";
 
 export type RunnerMode = "mock" | "native" | "docker";
-export type AuthMode = "none" | "static" | "oidc";
+export type AuthMode = "none" | "session" | "static" | "oidc";
 export type JobKind = "ideation" | "experiment";
 export type JobStatus = "queued" | "running" | "succeeded" | "failed" | "cancelled";
 

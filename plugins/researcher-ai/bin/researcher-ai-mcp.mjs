@@ -23624,7 +23624,7 @@ function runnerMode(value) {
   return "mock";
 }
 function authMode(value) {
-  if (value === "static" || value === "oidc" || value === "none") return value;
+  if (value === "session" || value === "static" || value === "oidc" || value === "none") return value;
   return "none";
 }
 function defaultDataDir() {
@@ -23638,7 +23638,7 @@ function loadConfig(environment = process.env) {
   const origins = environment.CORS_ORIGINS?.trim();
   const config3 = {
     port,
-    baseUrl: (environment.BASE_URL ?? `http://localhost:${port}`).replace(/\/+$/, ""),
+    baseUrl: (environment.BASE_URL ?? environment.RENDER_EXTERNAL_URL ?? `http://localhost:${port}`).replace(/\/+$/, ""),
     dataDir: path.resolve(environment.RESEARCHER_DATA_DIR ?? defaultDataDir()),
     runnerMode: runnerMode(environment.RESEARCHER_RUNNER),
     maxConcurrency: positiveInteger(environment.RESEARCHER_MAX_CONCURRENCY, 1),
@@ -23653,6 +23653,7 @@ function loadConfig(environment = process.env) {
     dockerPids: environment.RESEARCHER_DOCKER_PIDS ?? "512",
     dockerNetwork: environment.RESEARCHER_DOCKER_NETWORK ?? "bridge",
     authMode: authMode(environment.AUTH_MODE),
+    sessionTtlMs: positiveInteger(environment.RESEARCHER_SESSION_TTL_SECONDS, 86400) * 1e3,
     corsOrigins: !origins || origins === "*" ? "*" : origins.split(",").map((origin) => origin.trim())
   };
   if (environment.RESEARCHER_API_TOKEN) config3.apiToken = environment.RESEARCHER_API_TOKEN;
@@ -23668,6 +23669,9 @@ function validateConfig(config3) {
   }
   if (config3.authMode === "oidc" && (!config3.oidcIssuer || !config3.oidcAudience || !config3.oidcJwksUri)) {
     throw new Error("AUTH_MODE=oidc requires OIDC_ISSUER, OIDC_AUDIENCE, and OIDC_JWKS_URI.");
+  }
+  if (config3.authMode === "session" && config3.runnerMode !== "mock") {
+    throw new Error("AUTH_MODE=session is restricted to RESEARCHER_RUNNER=mock.");
   }
 }
 
@@ -32555,6 +32559,7 @@ import {
   readFile,
   readdir as readdir2,
   realpath,
+  rm,
   rename,
   stat,
   writeFile as writeFile2
@@ -32650,6 +32655,9 @@ var ResearchStore = class {
   }
   tenantDirectory(tenantId2) {
     return path3.join(this.root, "tenants", tenantKey(tenantId2));
+  }
+  async deleteTenant(tenantId2) {
+    await rm(this.tenantDirectory(tenantId2), { recursive: true, force: true });
   }
   projectDirectory(tenantId2, projectId) {
     assertUuid(projectId, "projectId");

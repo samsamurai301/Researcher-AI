@@ -4,7 +4,7 @@ import path from "node:path";
 import request from "supertest";
 import { afterEach, describe, expect, it } from "vitest";
 import { createHttpApp } from "../src/http-app.js";
-import { loadConfig } from "../src/config.js";
+import { loadConfig, validateConfig } from "../src/config.js";
 import { createRuntime } from "../src/runtime.js";
 
 const temporaryDirectories: string[] = [];
@@ -32,5 +32,26 @@ describe("HTTP service boundary", () => {
     await request(app).get("/.well-known/openai-apps-challenge").expect(200, "openai-domain-verification-token");
     const unauthorized = await request(app).post("/mcp").send({ jsonrpc: "2.0", method: "initialize", id: 1 }).expect(401);
     expect(unauthorized.headers["www-authenticate"]).toContain("oauth-protected-resource");
+  });
+
+  it("serves the public legal pages and restricts anonymous sessions to the mock runner", async () => {
+    const root = await mkdtemp(path.join(os.tmpdir(), "researcher-ai-legal-"));
+    temporaryDirectories.push(root);
+    const config = loadConfig({
+      RESEARCHER_DATA_DIR: root,
+      RESEARCHER_RUNNER: "mock",
+      AUTH_MODE: "session",
+      RENDER_EXTERNAL_URL: "https://researcher-ai-mcp.onrender.com",
+    });
+    validateConfig(config);
+    const app = createHttpApp(await createRuntime(config));
+
+    expect(config.baseUrl).toBe("https://researcher-ai-mcp.onrender.com");
+    await request(app).get("/privacy").expect(200).expect("content-type", /html/).expect(/Privacy Policy/);
+    await request(app).get("/terms").expect(200).expect("content-type", /html/).expect(/Terms of Service/);
+
+    const unsafeConfig = loadConfig({ RESEARCHER_RUNNER: "docker", AUTH_MODE: "session" });
+    expect(() => validateConfig(unsafeConfig)).toThrow("restricted to RESEARCHER_RUNNER=mock");
+    await app.locals.closeMcpSessions();
   });
 });

@@ -19,6 +19,7 @@ export interface ServiceConfig {
   dockerPids: string;
   dockerNetwork: string;
   authMode: AuthMode;
+  sessionTtlMs: number;
   apiToken?: string;
   oidcIssuer?: string;
   oidcAudience?: string;
@@ -38,7 +39,7 @@ function runnerMode(value: string | undefined): RunnerMode {
 }
 
 function authMode(value: string | undefined): AuthMode {
-  if (value === "static" || value === "oidc" || value === "none") return value;
+  if (value === "session" || value === "static" || value === "oidc" || value === "none") return value;
   return "none";
 }
 
@@ -54,7 +55,7 @@ export function loadConfig(environment: NodeJS.ProcessEnv = process.env): Servic
   const origins = environment.CORS_ORIGINS?.trim();
   const config: ServiceConfig = {
     port,
-    baseUrl: (environment.BASE_URL ?? `http://localhost:${port}`).replace(/\/+$/, ""),
+    baseUrl: (environment.BASE_URL ?? environment.RENDER_EXTERNAL_URL ?? `http://localhost:${port}`).replace(/\/+$/, ""),
     dataDir: path.resolve(environment.RESEARCHER_DATA_DIR ?? defaultDataDir()),
     runnerMode: runnerMode(environment.RESEARCHER_RUNNER),
     maxConcurrency: positiveInteger(environment.RESEARCHER_MAX_CONCURRENCY, 1),
@@ -69,6 +70,7 @@ export function loadConfig(environment: NodeJS.ProcessEnv = process.env): Servic
     dockerPids: environment.RESEARCHER_DOCKER_PIDS ?? "512",
     dockerNetwork: environment.RESEARCHER_DOCKER_NETWORK ?? "bridge",
     authMode: authMode(environment.AUTH_MODE),
+    sessionTtlMs: positiveInteger(environment.RESEARCHER_SESSION_TTL_SECONDS, 86_400) * 1_000,
     corsOrigins: !origins || origins === "*" ? "*" : origins.split(",").map((origin) => origin.trim()),
   };
 
@@ -86,5 +88,8 @@ export function validateConfig(config: ServiceConfig): void {
   }
   if (config.authMode === "oidc" && (!config.oidcIssuer || !config.oidcAudience || !config.oidcJwksUri)) {
     throw new Error("AUTH_MODE=oidc requires OIDC_ISSUER, OIDC_AUDIENCE, and OIDC_JWKS_URI.");
+  }
+  if (config.authMode === "session" && config.runnerMode !== "mock") {
+    throw new Error("AUTH_MODE=session is restricted to RESEARCHER_RUNNER=mock.");
   }
 }
