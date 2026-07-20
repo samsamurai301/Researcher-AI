@@ -17,6 +17,64 @@ afterEach(async () => {
 });
 
 describe("streamable HTTP MCP", () => {
+  it("runs the public review workflow without relying on transport session persistence", async () => {
+    const root = await mkdtemp(path.join(os.tmpdir(), "researcher-ai-stateless-review-"));
+    temporaryDirectories.push(root);
+    const runtime = await createRuntime(loadConfig({
+      RESEARCHER_DATA_DIR: root,
+      RESEARCHER_RUNNER: "mock",
+      RESEARCHER_MOCK_DELAY_MS: "1",
+      AUTH_MODE: "none",
+      PUBLIC_REVIEW_MODE: "stateless",
+    }));
+    const app = createHttpApp(runtime);
+    const httpServer = app.listen(0, "127.0.0.1");
+    await new Promise<void>((resolve, reject) => {
+      httpServer.once("listening", resolve);
+      httpServer.once("error", reject);
+    });
+    const { port } = httpServer.address() as AddressInfo;
+    const client = new Client({ name: "researcher-ai-stateless-review", version: "0.1.0" });
+    const transport = new StreamableHTTPClientTransport(new URL(`http://127.0.0.1:${port}/mcp`));
+
+    try {
+      await client.connect(transport as unknown as Transport);
+      const tools = await client.listTools();
+      expect(tools.tools.map((tool) => tool.name)).toEqual([
+        "get_service_status",
+        "run_mock_research_workflow",
+      ]);
+      const workflow = await client.callTool({
+        name: "run_mock_research_workflow",
+        arguments: {
+          title: "Robust Calibration Under Dataset Shift",
+          keywords: ["calibration", "uncertainty", "dataset shift"],
+          tldr: "Adaptive temperature scaling can improve calibration under moderate distribution shift.",
+          abstract: "A deterministic mock study of adaptive temperature scaling under moderate dataset shift for marketplace review.",
+          maxGenerations: 2,
+          reflections: 2,
+        },
+      });
+      expect(workflow.isError).not.toBe(true);
+      expect(workflow.structuredContent).toMatchObject({
+        guarantees: {
+          persisted: false,
+          realModelCalls: false,
+          generatedCodeExecution: false,
+          scientificallyValidated: false,
+        },
+        ideas: [{}, {}],
+      });
+      expect(JSON.stringify(workflow.structuredContent)).toContain("autonomously generated or produced");
+      expect(await readdir(path.join(root, "tenants"))).toEqual([]);
+    } finally {
+      await transport.terminateSession();
+      await client.close();
+      await app.locals.closeMcpSessions();
+      await new Promise<void>((resolve, reject) => httpServer.close((error) => error ? reject(error) : resolve()));
+    }
+  });
+
   it("initializes, lists tools, and calls the service over the ChatGPT transport", async () => {
     const root = await mkdtemp(path.join(os.tmpdir(), "researcher-ai-http-mcp-"));
     temporaryDirectories.push(root);

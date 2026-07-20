@@ -4,7 +4,7 @@ Researcher AI turns [Sakana AI's AI Scientist-v2](https://github.com/SakanaAI/AI
 
 It is more than a prompt wrapper: the repository contains a shared MCP server, a ChatGPT Apps SDK widget, persistent tenant-isolated projects and jobs, cancellation and audit logs, a mandatory manuscript-disclosure pass, a Codex plugin, a Claude Code plugin, local marketplace catalogs, and deployment assets for isolated execution.
 
-> **Safety default:** installations start in deterministic `mock` mode. Live experiments execute LLM-written code and must run inside a dedicated sandbox. Never expose `AUTH_MODE=none` to the public internet. `AUTH_MODE=session` is restricted to mock-only public review deployments and deletes isolated anonymous session data on close or after the configured inactivity limit.
+> **Safety default:** installations start in deterministic `mock` mode. Live experiments execute LLM-written code and must run inside a dedicated sandbox. The public no-auth deployment must set `PUBLIC_REVIEW_MODE=stateless`; that profile exposes only status and one deterministic mock workflow, then deletes its isolated working state before returning. Never expose the persistent tool set with `AUTH_MODE=none` to the public internet.
 
 ## What is included
 
@@ -15,7 +15,7 @@ It is more than a prompt wrapper: the repository contains a shared MCP server, a
 | Claude Code plugin | `plugins/researcher-ai/.claude-plugin/plugin.json` + `.mcp.json` | Shared skill, research-manager agent, and bundled stdio MCP server |
 | AI Scientist integration | Pinned Git submodule + native/Docker runners | Ideation and experiment execution at commit `96bd51617cfdbb494a9fc283af00fe090edfae48` |
 
-The MCP server exposes ten tools: service status, project creation/listing, ideation start/list, experiment start, job status/cancellation, and artifact list/read.
+The local/private MCP server exposes ten tools: service status, project creation/listing, ideation start/list, experiment start, job status/cancellation, and artifact list/read. The public ChatGPT review deployment exposes two non-persistent tools: service status and a complete deterministic mock research workflow.
 
 ## Architecture
 

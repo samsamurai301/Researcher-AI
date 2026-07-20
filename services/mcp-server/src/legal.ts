@@ -18,15 +18,15 @@ export const PRIVACY_HTML = page("Researcher AI Privacy Policy", `
   <h2>Data we process</h2>
   <p>We process the research titles, keywords, questions, abstracts, tool inputs, and mock artifacts you submit. The hosting provider may process standard network and service metadata, such as IP address, request time, response status, and user agent, to operate and secure the service.</p>
   <h2>How we use data</h2>
-  <p>Data is used only to provide the requested mock workflow, maintain session isolation, diagnose failures, prevent abuse, and meet legal obligations. We do not sell personal data, use it for advertising, or use it to train models.</p>
+  <p>Data is used only to provide the requested mock workflow, isolate temporary processing, diagnose failures, prevent abuse, and meet legal obligations. We do not sell personal data, use it for advertising, or use it to train models.</p>
   <h2>Storage and retention</h2>
-  <p>Each anonymous MCP session receives an unguessable identifier. The identifier is hashed before it is used in a filesystem path. Session project data is deleted when the MCP session closes or after 24 hours of inactivity, with cleanup checks running once per minute; a service restart may delete it sooner. Do not submit confidential, regulated, or personally identifying information.</p>
+  <p>Each public mock workflow uses a random, server-generated identifier that is hashed before it is used in a filesystem path. The workflow deletes its temporary project and artifact files before returning the result. The hosting provider may retain standard network or service logs according to its operational retention practices. Do not submit confidential, regulated, or personally identifying information.</p>
   <h2>Sharing</h2>
   <p>Data is shared only with infrastructure providers as needed to host and secure the service, or when required by law. The public review service does not call external model or literature providers.</p>
   <h2>Your choices</h2>
-  <p>You can ask ChatGPT to close the plugin session to trigger deletion. For access, correction, deletion, or privacy questions, use the <a href="https://github.com/samsamurai301/Researcher-AI/issues">Researcher AI support tracker</a>. Do not include sensitive personal data in a public issue; request a private contact channel instead.</p>
+  <p>For access, correction, deletion, or privacy questions, use the <a href="https://github.com/samsamurai301/Researcher-AI/issues">Researcher AI support tracker</a>. Do not include sensitive personal data in a public issue; request a private contact channel instead.</p>
   <h2>Security and changes</h2>
-  <p>We use bounded inputs, session isolation, hashed storage paths, a non-privileged container, and a mock-only public runner. No internet service is risk-free. Material policy changes will be published here with a new effective date.</p>
+  <p>We use bounded inputs, per-call isolation, hashed storage paths, immediate temporary-state deletion, a non-privileged container, and a mock-only public runner. No internet service is risk-free. Material policy changes will be published here with a new effective date.</p>
 `);
 
 export const TERMS_HTML = page("Researcher AI Terms of Service", `
@@ -40,7 +40,7 @@ export const TERMS_HTML = page("Researcher AI Terms of Service", `
   <h2>Machine-generation disclosure</h2>
   <p>Generated scientific manuscripts and technical reports must retain the disclosure required by the pinned AI Scientist v2 license: human reviewers remain responsible for verification, attribution, and publication decisions.</p>
   <h2>Your content</h2>
-  <p>You retain rights in content you submit. You grant the operator a limited license to process that content only to provide, secure, and troubleshoot the service. Session content is handled according to the <a href="/privacy">Privacy Policy</a>.</p>
+  <p>You retain rights in content you submit. You grant the operator a limited license to process that content only to provide, secure, and troubleshoot the service. Submitted content is handled according to the <a href="/privacy">Privacy Policy</a>.</p>
   <h2>Availability and warranties</h2>
   <p>The service is provided on an “as is” and “as available” basis for evaluation. Features may change, sessions may expire, and availability is not guaranteed. To the maximum extent permitted by applicable law, the operator disclaims implied warranties and is not liable for indirect, incidental, special, consequential, or lost-profit damages arising from use of the service.</p>
   <h2>Suspension and changes</h2>
