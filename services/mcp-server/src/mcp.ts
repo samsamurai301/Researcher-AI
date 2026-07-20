@@ -4,6 +4,7 @@ import {
   RESOURCE_MIME_TYPE,
 } from "@modelcontextprotocol/ext-apps/server";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import widgetHtml from "../../../apps/widget/dist/index.html";
 import type { AuthContext } from "./auth.js";
@@ -41,6 +42,55 @@ function errorResult(error: unknown) {
 function assertScope(auth: AuthContext, required: "research:read" | "research:write"): void {
   if (auth.scopes.includes(required) || auth.scopes.includes("research:*") || auth.scopes.includes("*")) return;
   throw new Error(`The authenticated identity is missing the ${required} scope.`);
+}
+
+async function runStatelessMockWorkflow(
+  runtime: ServiceRuntime,
+  input: {
+    title: string;
+    keywords: string[];
+    tldr: string;
+    abstract: string;
+    maxGenerations: number;
+    reflections: number;
+  },
+) {
+  const tenantId = `public-review:${randomUUID()}`;
+  try {
+    const project = await runtime.store.createProject(tenantId, input);
+    const job = await runtime.store.createJob(tenantId, project.id, "ideation", {
+      model: "mock-review",
+      maxGenerations: input.maxGenerations,
+      reflections: input.reflections,
+    });
+    const output = await runtime.runner.execute(
+      tenantId,
+      job,
+      project,
+      new AbortController().signal,
+      () => undefined,
+    );
+    const [updatedProject, ideas, artifacts] = await Promise.all([
+      runtime.store.getProject(tenantId, project.id),
+      runtime.store.readIdeas(tenantId, project.id),
+      runtime.store.listArtifacts(tenantId, project.id),
+    ]);
+    const disclosureDescriptor = artifacts.find((artifact) =>
+      artifact.readable && (artifact.path.endsWith("ideation-summary.md") || artifact.path === "topic.md")
+    );
+    const disclosureArtifact = disclosureDescriptor
+      ? await runtime.store.readArtifact(tenantId, project.id, disclosureDescriptor.path)
+      : undefined;
+    return {
+      project: updatedProject,
+      job: publicJob({ ...job, status: "succeeded", output }),
+      ideas,
+      artifacts,
+      disclosureArtifact,
+    };
+  } finally {
+    await runtime.store.deleteTenant(tenantId);
+  }
 }
 
 export function createResearcherMcpServer(runtime: ServiceRuntime, auth: AuthContext): McpServer {
@@ -86,9 +136,52 @@ export function createResearcherMcpServer(runtime: ServiceRuntime, auth: AuthCon
         authMode: runtime.config.authMode,
         maxConcurrency: runtime.config.maxConcurrency,
         upstreamCommit: "96bd516",
+        publicReviewMode: runtime.config.publicReviewMode,
       },
     }),
   );
+
+  if (runtime.config.publicReviewMode === "stateless") {
+    registerAppTool(
+      server,
+      "run_mock_research_workflow",
+      {
+        title: "Run a mock research workflow",
+        description: "Generate deterministic mock AI Scientist v2 ideas and auditable disclosure artifacts in one isolated, stateless operation. It makes no model calls, executes no generated code, accesses no external data, persists no user project, and does not scientifically validate the hypothesis.",
+        inputSchema: {
+          title: z.string().trim().min(3).max(160).describe("Clear mock research project title."),
+          keywords: z.array(z.string().trim().min(1).max(60)).min(1).max(12).describe("Research keywords."),
+          tldr: z.string().trim().min(10).max(600).describe("One concise, testable mock research question or hypothesis."),
+          abstract: z.string().trim().min(40).max(5_000).describe("Scope, motivation, expected method, and evaluation criteria."),
+          maxGenerations: z.number().int().min(1).max(3).default(2).describe("Number of deterministic mock proposals to generate."),
+          reflections: z.number().int().min(1).max(8).default(2).describe("Recorded mock refinement setting; no model reflection is performed."),
+        },
+        annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: false },
+        _meta: TOOL_META,
+      },
+      async (input) => {
+        try {
+          const workflow = await runStatelessMockWorkflow(runtime, input);
+          return result(`Generated ${workflow.ideas.length} deterministic mock research ideas and deleted the isolated working state.`, {
+            view: "workflow",
+            ...workflow,
+            disclosure: DISCLOSURE_TEXT,
+            guarantees: {
+              runnerMode: "mock",
+              persisted: false,
+              realModelCalls: false,
+              generatedCodeExecution: false,
+              externalDataAccess: false,
+              scientificallyValidated: false,
+            },
+          });
+        } catch (error) {
+          return errorResult(error);
+        }
+      },
+    );
+    return server;
+  }
 
   registerAppTool(
     server,

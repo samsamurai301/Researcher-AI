@@ -19,6 +19,7 @@ export interface ServiceConfig {
   dockerPids: string;
   dockerNetwork: string;
   authMode: AuthMode;
+  publicReviewMode: "off" | "stateless";
   sessionTtlMs: number;
   apiToken?: string;
   oidcIssuer?: string;
@@ -41,6 +42,10 @@ function runnerMode(value: string | undefined): RunnerMode {
 function authMode(value: string | undefined): AuthMode {
   if (value === "session" || value === "static" || value === "oidc" || value === "none") return value;
   return "none";
+}
+
+function publicReviewMode(value: string | undefined): "off" | "stateless" {
+  return value === "stateless" ? "stateless" : "off";
 }
 
 function defaultDataDir(): string {
@@ -70,6 +75,7 @@ export function loadConfig(environment: NodeJS.ProcessEnv = process.env): Servic
     dockerPids: environment.RESEARCHER_DOCKER_PIDS ?? "512",
     dockerNetwork: environment.RESEARCHER_DOCKER_NETWORK ?? "bridge",
     authMode: authMode(environment.AUTH_MODE),
+    publicReviewMode: publicReviewMode(environment.PUBLIC_REVIEW_MODE),
     sessionTtlMs: positiveInteger(environment.RESEARCHER_SESSION_TTL_SECONDS, 86_400) * 1_000,
     corsOrigins: !origins || origins === "*" ? "*" : origins.split(",").map((origin) => origin.trim()),
   };
@@ -91,5 +97,8 @@ export function validateConfig(config: ServiceConfig): void {
   }
   if (config.authMode === "session" && config.runnerMode !== "mock") {
     throw new Error("AUTH_MODE=session is restricted to RESEARCHER_RUNNER=mock.");
+  }
+  if (config.publicReviewMode === "stateless" && config.runnerMode !== "mock") {
+    throw new Error("PUBLIC_REVIEW_MODE=stateless is restricted to RESEARCHER_RUNNER=mock.");
   }
 }

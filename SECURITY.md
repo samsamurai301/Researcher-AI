@@ -24,7 +24,7 @@ Docker isolation is not a perfect security boundary. Keep the host patched, do n
 
 ## Production requirements
 
-1. Use HTTPS and `AUTH_MODE=oidc`. `AUTH_MODE=none` trusts a local tenant header and is only for loopback/stdin development. Static auth represents a single tenant and is appropriate only for private testing.
+1. Use HTTPS and `AUTH_MODE=oidc` for the persistent or live-execution tool set. `AUTH_MODE=none` trusts a local tenant header and is otherwise only for loopback/stdin development. The sole public exception is `PUBLIC_REVIEW_MODE=stateless` with the mock runner; that profile registers no persistent or execution tools and deletes its random per-call working state before returning. Static auth represents a single tenant and is appropriate only for private testing.
 2. Configure OIDC tokens with `research:read` and/or `research:write` scopes. Tenant storage is keyed by the verified token subject.
 3. Restrict CORS with `CORS_ORIGINS`; do not use `*` for a public deployment.
 4. Use provider credentials dedicated to this service, with strict spend limits, minimal cloud permissions, rotation, and no access to production resources.

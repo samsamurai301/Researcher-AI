@@ -15,7 +15,9 @@ services:
       - key: RESEARCHER_RUNNER
         value: mock
       - key: AUTH_MODE
-        value: session
+        value: none
+      - key: PUBLIC_REVIEW_MODE
+        value: stateless
       - key: RESEARCHER_SESSION_TTL_SECONDS
         value: "86400"
       - key: RESEARCHER_DATA_DIR

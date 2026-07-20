@@ -52,6 +52,8 @@ describe("HTTP service boundary", () => {
 
     const unsafeConfig = loadConfig({ RESEARCHER_RUNNER: "docker", AUTH_MODE: "session" });
     expect(() => validateConfig(unsafeConfig)).toThrow("restricted to RESEARCHER_RUNNER=mock");
+    const unsafeReviewConfig = loadConfig({ RESEARCHER_RUNNER: "native", PUBLIC_REVIEW_MODE: "stateless" });
+    expect(() => validateConfig(unsafeReviewConfig)).toThrow("PUBLIC_REVIEW_MODE=stateless is restricted");
     await app.locals.closeMcpSessions();
   });
 });
