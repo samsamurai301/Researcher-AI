@@ -1,0 +1,28 @@
+# syntax=docker/dockerfile:1.7
+ARG AI_SCIENTIST_PLATFORM=linux/amd64
+FROM --platform=${AI_SCIENTIST_PLATFORM} pytorch/pytorch:2.5.1-cuda12.4-cudnn9-runtime
+
+ARG DEBIAN_FRONTEND=noninteractive
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+      build-essential \
+      chktex \
+      git \
+      poppler-utils \
+      texlive-fonts-recommended \
+      texlive-latex-extra \
+      texlive-latex-recommended \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /opt/ai-scientist
+COPY vendor/ai-scientist-v2/requirements.txt ./requirements.txt
+RUN python3 -m pip install --no-cache-dir -r requirements.txt "anthropic[bedrock]"
+
+COPY vendor/ai-scientist-v2/ /opt/ai-scientist/
+COPY infra/disclose_artifacts.py /opt/researcher/disclose_artifacts.py
+COPY licenses/AI-SCIENTIST-SOURCE-CODE-LICENSE /opt/ai-scientist/LICENSE
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+ENTRYPOINT []
+CMD ["python3", "--version"]

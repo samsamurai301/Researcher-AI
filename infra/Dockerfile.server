@@ -1,0 +1,35 @@
+# syntax=docker/dockerfile:1.7
+FROM node:24-bookworm-slim AS build
+WORKDIR /build
+COPY package.json package-lock.json tsconfig.base.json ./
+COPY apps/widget/package.json apps/widget/package.json
+COPY services/mcp-server/package.json services/mcp-server/package.json
+RUN npm ci
+COPY apps/ apps/
+COPY services/ services/
+COPY scripts/ scripts/
+COPY plugins/researcher-ai/ plugins/researcher-ai/
+COPY infra/disclose_artifacts.py infra/disclose_artifacts.py
+COPY licenses/ licenses/
+COPY LICENSE ./LICENSE
+COPY THIRD_PARTY_NOTICES.md ./THIRD_PARTY_NOTICES.md
+RUN npm run build
+
+FROM node:24-bookworm-slim
+LABEL org.opencontainers.image.title="Researcher AI MCP server" \
+      org.opencontainers.image.description="MCP and Apps SDK gateway for auditable AI Scientist workflows"
+RUN useradd --create-home --uid 10001 researcher \
+    && mkdir -p /data \
+    && chown researcher:researcher /data
+WORKDIR /app
+COPY --from=build --chown=researcher:researcher /build/services/mcp-server/dist/ ./dist/
+COPY --from=build --chown=researcher:researcher /build/LICENSE ./LICENSE
+COPY --from=build --chown=researcher:researcher /build/licenses/ ./licenses/
+USER researcher
+ENV NODE_ENV=production \
+    PORT=8000 \
+    RESEARCHER_DATA_DIR=/data \
+    RESEARCHER_RUNNER=mock \
+    AUTH_MODE=none
+EXPOSE 8000
+CMD ["node", "dist/http.mjs"]

@@ -1,0 +1,3 @@
+[submodule "vendor/ai-scientist-v2"]
+	path = vendor/ai-scientist-v2
+	url = https://github.com/SakanaAI/AI-Scientist-v2.git

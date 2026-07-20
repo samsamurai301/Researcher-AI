@@ -1,0 +1,12 @@
+.git
+.github
+.researcher-ai
+node_modules
+**/node_modules
+**/dist
+plugins/researcher-ai/bin
+plugins/researcher-ai/licenses
+vendor/ai-scientist-v2/.git
+vendor/ai-scientist-v2/experiments
+**/__pycache__
+*.log

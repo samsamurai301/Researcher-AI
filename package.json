@@ -1,0 +1,37 @@
+{
+  "name": "researcher-ai",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "A safe, MCP-first distribution of AI Scientist v2 for ChatGPT, Codex, and Claude Code.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/samsamurai301/Researcher-AI.git"
+  },
+  "homepage": "https://github.com/samsamurai301/Researcher-AI#readme",
+  "bugs": {
+    "url": "https://github.com/samsamurai301/Researcher-AI/issues"
+  },
+  "workspaces": [
+    "apps/*",
+    "services/*"
+  ],
+  "scripts": {
+    "build": "npm run build --workspace @researcher-ai/widget && npm run build --workspace @researcher-ai/mcp-server && npm run package:plugins",
+    "dev": "npm run dev --workspace @researcher-ai/mcp-server",
+    "start": "node services/mcp-server/dist/http.mjs",
+    "start:stdio": "node services/mcp-server/dist/stdio.mjs",
+    "package:plugins": "node scripts/package-plugins.mjs",
+    "link:chatgpt": "node scripts/link-chatgpt-app.mjs",
+    "test": "npm run test --workspace @researcher-ai/mcp-server",
+    "test:watch": "npm run test:watch --workspace @researcher-ai/mcp-server",
+    "typecheck": "npm run typecheck --workspace @researcher-ai/widget && npm run typecheck --workspace @researcher-ai/mcp-server",
+    "validate": "npm run build && node scripts/validate-manifests.mjs && node scripts/validate-codex-plugin.mjs",
+    "validate:claude": "claude plugin validate plugins/researcher-ai && claude plugin validate .claude-plugin/marketplace.json",
+    "release:check": "npm audit && npm run typecheck && npm test && npm run validate && npm run validate:claude && npm run smoke",
+    "smoke": "node scripts/smoke-test.mjs"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

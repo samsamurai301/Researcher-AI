@@ -1,0 +1,16 @@
+{
+  "name": "researcher-ai",
+  "version": "0.1.0",
+  "description": "Auditable research ideation and sandboxed AI Scientist v2 experiments for Claude Code.",
+  "author": {
+    "name": "Sohangkumar Patel"
+  },
+  "license": "Apache-2.0",
+  "keywords": [
+    "research",
+    "science",
+    "experiments",
+    "ai-scientist",
+    "mcp"
+  ]
+}

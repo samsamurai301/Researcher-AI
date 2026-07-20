@@ -1,0 +1,23 @@
+[Unit]
+Description=Researcher AI MCP service
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=researcher-ai
+Group=researcher-ai
+WorkingDirectory=/opt/researcher-ai
+EnvironmentFile=/etc/researcher-ai.env
+ExecStart=/usr/bin/node /opt/researcher-ai/services/mcp-server/dist/http.mjs
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+ReadWritePaths=/var/lib/researcher-ai
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target

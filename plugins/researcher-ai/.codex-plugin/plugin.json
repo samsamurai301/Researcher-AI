@@ -1,0 +1,71 @@
+{
+  "name": "researcher-ai",
+  "version": "0.1.0",
+  "description": "Run auditable AI-assisted research ideation and sandboxed AI Scientist v2 experiments.",
+  "author": {
+    "name": "Sohangkumar Patel"
+  },
+  "license": "Apache-2.0",
+  "keywords": [
+    "research",
+    "science",
+    "experiments",
+    "ai-scientist",
+    "mcp"
+  ],
+  "skills": "./skills/",
+  "mcpServers": {
+    "researcher-ai": {
+      "command": "node",
+      "args": [
+        "./bin/researcher-ai-mcp.mjs"
+      ],
+      "cwd": ".",
+      "env_vars": [
+        "RESEARCHER_DATA_DIR",
+        "RESEARCHER_RUNNER",
+        "RESEARCHER_TENANT_ID",
+        "RESEARCHER_MAX_CONCURRENCY",
+        "RESEARCHER_MOCK_DELAY_MS",
+        "AI_SCIENTIST_ROOT",
+        "PYTHON_BIN",
+        "RESEARCHER_DOCKER_IMAGE",
+        "RESEARCHER_DOCKER_PYTHON_BIN",
+        "RESEARCHER_DOCKER_GPUS",
+        "RESEARCHER_DOCKER_CPUS",
+        "RESEARCHER_DOCKER_MEMORY",
+        "RESEARCHER_DOCKER_PIDS",
+        "RESEARCHER_DOCKER_NETWORK",
+        "OPENAI_API_KEY",
+        "GEMINI_API_KEY",
+        "S2_API_KEY",
+        "AWS_ACCESS_KEY_ID",
+        "AWS_SECRET_ACCESS_KEY",
+        "AWS_SESSION_TOKEN",
+        "AWS_REGION_NAME"
+      ],
+      "tool_timeout_sec": 7200
+    }
+  },
+  "interface": {
+    "displayName": "Researcher AI",
+    "shortDescription": "Auditable autonomous research workflows",
+    "longDescription": "Create research projects, generate structured ideas, run sandboxed AI Scientist v2 experiments, inspect progress, and review disclosure-preserving artifacts from ChatGPT or Codex.",
+    "developerName": "Sohangkumar Patel",
+    "category": "Productivity",
+    "capabilities": [
+      "Interactive",
+      "Read",
+      "Write"
+    ],
+    "defaultPrompt": [
+      "Create an auditable research project",
+      "Generate and compare research ideas",
+      "Review my latest experiment artifacts"
+    ],
+    "brandColor": "#173F30",
+    "composerIcon": "./assets/icon.png",
+    "logo": "./assets/logo.png",
+    "screenshots": []
+  }
+}

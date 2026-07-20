@@ -1,0 +1,24 @@
+services:
+  researcher-ai:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile.server
+    ports:
+      - "127.0.0.1:8000:8000"
+    environment:
+      BASE_URL: http://localhost:8000
+      RESEARCHER_RUNNER: mock
+      AUTH_MODE: none
+    volumes:
+      - researcher-data:/data
+    read_only: true
+    tmpfs:
+      - /tmp:size=128m,mode=1777
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    restart: unless-stopped
+
+volumes:
+  researcher-data:

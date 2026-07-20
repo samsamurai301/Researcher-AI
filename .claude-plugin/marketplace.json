@@ -1,0 +1,19 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "researcher-ai",
+  "description": "Auditable and sandbox-aware autonomous research workflows.",
+  "owner": {
+    "name": "Sohangkumar Patel"
+  },
+  "plugins": [
+    {
+      "name": "researcher-ai",
+      "description": "Generate research ideas, run isolated AI Scientist v2 experiments, and inspect disclosure-preserving artifacts.",
+      "author": {
+        "name": "Sohangkumar Patel"
+      },
+      "category": "productivity",
+      "source": "./plugins/researcher-ai"
+    }
+  ]
+}

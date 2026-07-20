@@ -1,0 +1,11 @@
+{
+  "researcher-ai": {
+    "command": "node",
+    "args": [
+      "${CLAUDE_PLUGIN_ROOT}/bin/researcher-ai-mcp.mjs"
+    ],
+    "env": {
+      "RESEARCHER_DATA_DIR": "${CLAUDE_PROJECT_DIR}/.researcher-ai"
+    }
+  }
+}

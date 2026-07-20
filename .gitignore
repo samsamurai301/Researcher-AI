@@ -1,0 +1,11 @@
+node_modules/
+dist/
+coverage/
+.env
+.env.local
+.researcher-ai/
+apps/widget/dist/
+services/mcp-server/dist/
+plugins/researcher-ai/.app.json
+*.log
+.DS_Store
