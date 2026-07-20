@@ -11,8 +11,10 @@ const server = app.listen(config.port, () => {
   console.log(`Runner: ${config.runnerMode}; auth: ${config.authMode}; data: ${config.dataDir}`);
 });
 
-const shutdown = (signal: string) => {
+const shutdown = async (signal: string) => {
   console.log(`Received ${signal}; stopping HTTP server.`);
+  const closeMcpSessions = app.locals.closeMcpSessions as (() => Promise<void>) | undefined;
+  await closeMcpSessions?.();
   server.close((error) => {
     if (error) {
       console.error(error);
@@ -21,5 +23,5 @@ const shutdown = (signal: string) => {
   });
 };
 
-process.once("SIGINT", () => shutdown("SIGINT"));
-process.once("SIGTERM", () => shutdown("SIGTERM"));
+process.once("SIGINT", () => void shutdown("SIGINT"));
+process.once("SIGTERM", () => void shutdown("SIGTERM"));

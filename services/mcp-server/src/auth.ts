@@ -30,10 +30,13 @@ export function createAuthenticator(config: ServiceConfig): Authenticator {
   const resourceMetadata = `${config.baseUrl}/.well-known/oauth-protected-resource`;
   const challenge = `Bearer resource_metadata="${resourceMetadata}"`;
 
-  if (config.authMode === "none") {
+  if (config.authMode === "none" || config.authMode === "session") {
     return {
       challenge,
       async authenticate(request) {
+        if (config.authMode === "session") {
+          return { tenantId: "pending-session", subject: "pending-session", scopes: ["research:read", "research:write"] };
+        }
         const requestedTenant = request.header("x-researcher-tenant")?.trim();
         const tenantId = requestedTenant && /^[A-Za-z0-9._:@/-]{1,160}$/.test(requestedTenant)
           ? requestedTenant

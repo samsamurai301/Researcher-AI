@@ -4,7 +4,7 @@ Researcher AI turns [Sakana AI's AI Scientist-v2](https://github.com/SakanaAI/AI
 
 It is more than a prompt wrapper: the repository contains a shared MCP server, a ChatGPT Apps SDK widget, persistent tenant-isolated projects and jobs, cancellation and audit logs, a mandatory manuscript-disclosure pass, a Codex plugin, a Claude Code plugin, local marketplace catalogs, and deployment assets for isolated execution.
 
-> **Safety default:** installations start in deterministic `mock` mode. Live experiments execute LLM-written code and must run inside a dedicated sandbox. Never expose `AUTH_MODE=none` to the public internet.
+> **Safety default:** installations start in deterministic `mock` mode. Live experiments execute LLM-written code and must run inside a dedicated sandbox. Never expose `AUTH_MODE=none` to the public internet. `AUTH_MODE=session` is restricted to mock-only public review deployments and deletes isolated anonymous session data on close or after the configured inactivity limit.
 
 ## What is included
 

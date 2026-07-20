@@ -1,4 +1,4 @@
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdtemp, readdir, rm } from "node:fs/promises";
 import type { AddressInfo } from "node:net";
 import os from "node:os";
 import path from "node:path";
@@ -45,6 +45,60 @@ describe("streamable HTTP MCP", () => {
       expect(result.structuredContent).toMatchObject({ service: { runnerMode: "mock" } });
     } finally {
       await client.close();
+      await new Promise<void>((resolve, reject) => httpServer.close((error) => error ? reject(error) : resolve()));
+    }
+  });
+
+  it("isolates anonymous public-review sessions and removes their data when they close", async () => {
+    const root = await mkdtemp(path.join(os.tmpdir(), "researcher-ai-session-mcp-"));
+    temporaryDirectories.push(root);
+    const runtime = await createRuntime(loadConfig({
+      RESEARCHER_DATA_DIR: root,
+      RESEARCHER_RUNNER: "mock",
+      AUTH_MODE: "session",
+    }));
+    const app = createHttpApp(runtime);
+    const httpServer = app.listen(0, "127.0.0.1");
+    await new Promise<void>((resolve, reject) => {
+      httpServer.once("listening", resolve);
+      httpServer.once("error", reject);
+    });
+    const { port } = httpServer.address() as AddressInfo;
+    const endpoint = new URL(`http://127.0.0.1:${port}/mcp`);
+    const firstClient = new Client({ name: "researcher-ai-session-a", version: "0.1.0" });
+    const secondClient = new Client({ name: "researcher-ai-session-b", version: "0.1.0" });
+    const firstTransport = new StreamableHTTPClientTransport(endpoint, {
+      requestInit: { headers: { "x-researcher-tenant": "attempted-shared-tenant" } },
+    });
+    const secondTransport = new StreamableHTTPClientTransport(endpoint, {
+      requestInit: { headers: { "x-researcher-tenant": "attempted-shared-tenant" } },
+    });
+
+    try {
+      await firstClient.connect(firstTransport as unknown as Transport);
+      await secondClient.connect(secondTransport as unknown as Transport);
+      const created = await firstClient.callTool({
+        name: "create_research_project",
+        arguments: {
+          title: "Session-isolated project",
+          keywords: ["sessions", "isolation"],
+          tldr: "Verify that anonymous MCP sessions cannot read each other's projects.",
+          abstract: "Create a project in one anonymous review session and verify that a second session receives an empty project list.",
+        },
+      });
+      expect(created.isError).not.toBe(true);
+
+      const firstProjects = await firstClient.callTool({ name: "list_research_projects", arguments: {} });
+      const secondProjects = await secondClient.callTool({ name: "list_research_projects", arguments: {} });
+      expect(firstProjects.structuredContent).toMatchObject({ projects: [{ title: "Session-isolated project" }] });
+      expect(secondProjects.structuredContent).toMatchObject({ projects: [] });
+    } finally {
+      await firstTransport.terminateSession();
+      await secondTransport.terminateSession();
+      await firstClient.close();
+      await secondClient.close();
+      await expect.poll(async () => (await readdir(path.join(root, "tenants"))).length).toBe(0);
+      await app.locals.closeMcpSessions();
       await new Promise<void>((resolve, reject) => httpServer.close((error) => error ? reject(error) : resolve()));
     }
   });

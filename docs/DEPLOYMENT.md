@@ -8,7 +8,7 @@
 | Private dedicated container | `native` | One trusted operator; the whole service container is disposable and resource-limited |
 | Live GPU host | `docker` | Recommended for real ideation/experiments; one sandbox container per job |
 
-Do not offer a shared public experiment service with native execution. A public ChatGPT listing can be reviewed in mock mode while the live GPU path remains restricted to approved tenants.
+Do not offer a shared public experiment service with native execution. A public ChatGPT listing can be reviewed in mock mode with `AUTH_MODE=session`, which isolates each anonymous MCP session and deletes its data on close or after the configured inactivity limit. The live GPU path remains restricted to authenticated, approved tenants.
 
 ## 2. Mock HTTP deployment
 
@@ -65,6 +65,7 @@ Add provider credentials through the host secrets manager, not this file when th
 ## 5. Authentication behavior
 
 - `none`: local only; tenant comes from `x-researcher-tenant` or defaults to `local`.
+- `session`: public mock review only; each MCP session receives an unguessable tenant identifier, hashes it before filesystem use, and expires after `RESEARCHER_SESSION_TTL_SECONDS` (24 hours by default). Configuration validation rejects this mode with `native` or `docker` execution.
 - `static`: one bearer token and one storage tenant; private testing only.
 - `oidc`: verifies issuer, audience, and signature against remote JWKS; `sub` becomes the tenant ID and tools enforce `research:read`/`research:write` scopes.
 
