@@ -31762,8 +31762,10 @@ function createResearcherMcpServer(runtime2, auth) {
         text: dist_default,
         _meta: {
           ui: {
-            csp: { connectDomains: [], resourceDomains: [] }
-          }
+            csp: { connectDomains: [], resourceDomains: [] },
+            domain: "https://researcher-ai-mcp.onrender.com"
+          },
+          "openai/widgetDescription": "Shows the active Researcher AI project, mock jobs, progress, and auditable artifacts."
         }
       }]
     })
