@@ -2,7 +2,7 @@
 
 Researcher AI turns [Sakana AI's AI Scientist-v2](https://github.com/SakanaAI/AI-Scientist-v2) into an auditable MCP product for **ChatGPT, Codex, and Claude Code**.
 
-It is more than a prompt wrapper: the repository contains a shared MCP server, a ChatGPT Apps SDK widget, persistent tenant-isolated projects and jobs, cancellation and audit logs, a mandatory manuscript-disclosure pass, a Codex plugin, a Claude Code plugin, local marketplace catalogs, and deployment assets for isolated execution.
+It is more than a prompt wrapper: the repository contains rich research briefs, deterministic ranked planning, a shared MCP server, a ChatGPT Apps SDK widget, persistent tenant-isolated projects and jobs, retry deduplication, graceful cancellation, audit logs, a mandatory manuscript-disclosure pass, Codex and Claude Code plugins, local marketplace catalogs, and deployment assets for isolated execution.
 
 > **Safety default:** installations start in deterministic `mock` mode. Live experiments execute LLM-written code and must run inside a dedicated sandbox. The public no-auth deployment must set `PUBLIC_REVIEW_MODE=stateless`; that profile exposes only status and one deterministic mock workflow, then deletes its isolated working state before returning. Never expose the persistent tool set with `AUTH_MODE=none` to the public internet.
 
@@ -15,7 +15,7 @@ It is more than a prompt wrapper: the repository contains a shared MCP server, a
 | Claude Code plugin | `plugins/researcher-ai/.claude-plugin/plugin.json` + `.mcp.json` | Shared skill, research-manager agent, and bundled stdio MCP server |
 | AI Scientist integration | Pinned Git submodule + native/Docker runners | Ideation and experiment execution at commit `96bd51617cfdbb494a9fc283af00fe090edfae48` |
 
-The local/private MCP server exposes ten tools: service status, project creation/listing, ideation start/list, experiment start, job status/cancellation, and artifact list/read. The public ChatGPT review deployment exposes two non-persistent tools: service status and a complete deterministic mock research workflow.
+The local/private MCP server exposes eleven tools: service status, rich project creation/listing/dashboard, ideation start/list, experiment start, job status/cancellation, and artifact list/read. The public ChatGPT review deployment exposes two non-persistent tools: service status and a complete deterministic mock workflow that returns ranked directions plus four downloadable inline audit artifacts.
 
 ## Architecture
 
@@ -89,7 +89,7 @@ Both local plugins use stdio MCP and default to mock execution. Set `RESEARCHER_
 Build the AI Scientist runner image:
 
 ```bash
-docker build --platform linux/amd64 -f infra/Dockerfile.ai-scientist -t researcher-ai-scientist:0.1.0 .
+docker build --platform linux/amd64 -f infra/Dockerfile.ai-scientist -t researcher-ai-scientist:0.2.0 .
 ```
 
 See [Deployment](docs/DEPLOYMENT.md) for HTTP/OIDC and GPU-host setup, and [Publishing](docs/PUBLISHING.md) for ChatGPT, Codex, and Claude marketplace release steps.

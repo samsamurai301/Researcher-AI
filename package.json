@@ -1,6 +1,6 @@
 {
   "name": "researcher-ai",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
   "description": "A safe, MCP-first distribution of AI Scientist v2 for ChatGPT, Codex, and Claude Code.",

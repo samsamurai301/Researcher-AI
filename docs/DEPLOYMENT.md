@@ -27,8 +27,8 @@ On a Linux NVIDIA host with the NVIDIA Container Toolkit:
 
 ```bash
 git submodule update --init --recursive
-docker build --platform linux/amd64 -f infra/Dockerfile.ai-scientist -t researcher-ai-scientist:0.1.0 .
-docker run --rm --gpus all researcher-ai-scientist:0.1.0 python3 -c "import torch; print(torch.cuda.is_available())"
+docker build --platform linux/amd64 -f infra/Dockerfile.ai-scientist -t researcher-ai-scientist:0.2.0 .
+docker run --rm --gpus all researcher-ai-scientist:0.2.0 python3 -c "import torch; print(torch.cuda.is_available())"
 ```
 
 The image includes the pinned upstream source, PyTorch/CUDA base, LaTeX/PDF tools, Python requirements, disclosure helper, and complete upstream license.
@@ -45,7 +45,7 @@ BASE_URL=https://researcher.example.com
 RESEARCHER_DATA_DIR=/var/lib/researcher-ai
 RESEARCHER_RUNNER=docker
 RESEARCHER_MAX_CONCURRENCY=1
-RESEARCHER_DOCKER_IMAGE=researcher-ai-scientist:0.1.0
+RESEARCHER_DOCKER_IMAGE=researcher-ai-scientist:0.2.0
 RESEARCHER_DOCKER_PYTHON_BIN=python3
 RESEARCHER_DOCKER_GPUS=all
 RESEARCHER_DOCKER_CPUS=8

@@ -1,6 +1,6 @@
 ---
 name: autonomous-research
-description: Create auditable research projects, generate ideas, run sandboxed AI Scientist v2 experiments, or inspect research artifacts. Use for autonomous research workflows; do not use for ordinary web research or unsupported publication claims.
+description: Build rich research briefs, rank falsifiable directions, run sandboxed AI Scientist v2 experiments, or inspect research dashboards and artifacts. Use for autonomous research workflows; do not use for ordinary web research or unsupported publication claims.
 argument-hint: "[research topic or project id]"
 ---
 
@@ -16,14 +16,33 @@ Use the Researcher AI MCP tools as the system of record. Never replace a tool re
    - `native` must only be used inside a dedicated execution container.
    - `docker` creates a resource-limited container per job.
 3. If the user expects a live experiment and the service reports `mock`, stop before claiming that a real experiment ran. Give the exact configuration change needed.
+4. If `publicReviewMode` is `stateless`, use `run_mock_research_workflow` as the complete workflow. Do not ask for project IDs or call private tools that are not exposed.
+
+## Build a decision-ready brief
+
+Translate the request into bounded, useful inputs before calling a workflow tool:
+
+- a clear title, 1-12 keywords, one testable research question, and contextual abstract;
+- up to six concrete objectives;
+- resource, data, safety, timing, and methodological constraints;
+- measurable evaluation criteria and the simplest credible baseline;
+- only source notes the user actually supplied, with limitations stated explicitly;
+- a concise, balanced, or detailed output preference.
+
+Do not invent evidence notes, citations, URLs, file paths, or evaluation results. If details are missing, use an empty optional field instead of fabricating certainty.
+
+In stateless public mode, call `run_mock_research_workflow` once. Report the ranked recommendation, explain that its score is a deterministic planning heuristic, surface falsification criteria, and mention the downloadable research brief, ideation report, run manifest, and disclosure record.
 
 ## Project and ideation workflow
 
-1. Convert the user's topic into a specific title, 1-12 keywords, one testable TL;DR hypothesis, and an abstract with evaluation criteria.
+1. Convert the user's topic into the decision-ready brief above.
 2. Call `create_research_project`.
 3. Before `start_ideation`, state that literature search can contact external services and consume provider credits.
 4. Call `start_ideation`, then report the job ID. Use `get_job_status` when the user asks for progress; do not fabricate completion.
 5. Once the job succeeds, call `list_research_ideas`. Compare novelty, falsifiability, feasibility, likely compute cost, and failure modes. Clearly label any judgment that is not directly present in an artifact as analysis rather than evidence.
+6. Use `get_project_dashboard` when the user asks for an overview, recommendation, current state, or next action. Prefer it over assembling separate project, job, idea, and artifact summaries.
+
+Identical ideation or experiment calls may return an existing active or newly completed job to make transport retries safe. Treat the returned job ID and state as authoritative; never assume a new job was created.
 
 ## Experiment workflow
 
@@ -57,8 +76,9 @@ After acknowledgment:
 Summarize:
 
 1. Project and selected idea.
-2. Runner mode and model configuration.
-3. Job state and identifiers.
-4. Evidence produced, including negative evidence.
-5. Disclosure status.
-6. Remaining human verification before any scientific or publication claim.
+2. Objectives, baseline, evaluation criteria, and material constraints.
+3. Runner mode and model configuration.
+4. Job state and identifiers.
+5. Evidence produced, including negative evidence and falsification outcomes.
+6. Disclosure status.
+7. Remaining human verification before any scientific or publication claim.

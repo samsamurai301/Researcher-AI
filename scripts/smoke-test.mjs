@@ -15,7 +15,7 @@ const transport = new StdioClientTransport({
     RESEARCHER_MOCK_DELAY_MS: "5",
   },
 });
-const client = new Client({ name: "researcher-ai-smoke", version: "0.1.0" });
+const client = new Client({ name: "researcher-ai-smoke", version: "0.2.0" });
 
 function structured(result) {
   if (result.isError) {
@@ -43,7 +43,8 @@ async function waitForJob(projectId, jobId) {
 try {
   await client.connect(transport);
   const tools = await client.listTools();
-  if (tools.tools.length !== 10) throw new Error(`Expected 10 tools, got ${tools.tools.length}`);
+  if (tools.tools.length !== 11) throw new Error(`Expected 11 tools, got ${tools.tools.length}`);
+  if (tools.tools.some((tool) => !tool.outputSchema)) throw new Error("Every MCP tool must declare an output schema");
   const service = structured(await client.callTool({ name: "get_service_status", arguments: {} }));
   if (service.service?.runnerMode !== "mock") throw new Error("Smoke test did not start in mock mode");
 
@@ -54,6 +55,10 @@ try {
       keywords: ["integration", "auditability"],
       tldr: "The packaged MCP service completes its deterministic workflow end to end.",
       abstract: "Exercise project creation, queued ideation, experiment execution, artifact indexing, and disclosure preservation.",
+      objectives: ["Generate ranked research directions", "Preserve a reproducible audit trail"],
+      constraints: ["No provider calls in smoke mode"],
+      evaluationCriteria: ["Deterministic ordering", "Explicit falsification criteria"],
+      baseline: "The unranked v0.1 mock workflow",
     },
   }));
   const projectId = created.project?.id;
@@ -67,6 +72,11 @@ try {
   if (ideationJob.status !== "succeeded") throw new Error(`Ideation ended as ${ideationJob.status}`);
   const ideas = structured(await client.callTool({ name: "list_research_ideas", arguments: { projectId } }));
   if (ideas.ideas?.length !== 2) throw new Error("Mock ideation did not produce two ideas");
+  if (ideas.ideas?.some((idea) => idea["Planning Score"]?.label !== "heuristic-mock-score")) {
+    throw new Error("Mock ideas did not include transparent planning scores");
+  }
+  const dashboard = structured(await client.callTool({ name: "get_project_dashboard", arguments: { projectId } }));
+  if (dashboard.dashboard?.rankedIdeas?.length !== 2) throw new Error("Project dashboard did not include ranked ideas");
 
   const experiment = structured(await client.callTool({
     name: "start_experiment",

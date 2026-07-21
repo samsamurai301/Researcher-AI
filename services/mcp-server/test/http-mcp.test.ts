@@ -34,7 +34,7 @@ describe("streamable HTTP MCP", () => {
       httpServer.once("error", reject);
     });
     const { port } = httpServer.address() as AddressInfo;
-    const client = new Client({ name: "researcher-ai-stateless-review", version: "0.1.0" });
+    const client = new Client({ name: "researcher-ai-stateless-review", version: "0.2.0" });
     const transport = new StreamableHTTPClientTransport(new URL(`http://127.0.0.1:${port}/mcp`));
 
     try {
@@ -51,6 +51,12 @@ describe("streamable HTTP MCP", () => {
           keywords: ["calibration", "uncertainty", "dataset shift"],
           tldr: "Adaptive temperature scaling can improve calibration under moderate distribution shift.",
           abstract: "A deterministic mock study of adaptive temperature scaling under moderate dataset shift for marketplace review.",
+          objectives: ["Compare calibration error under three pre-declared shift levels"],
+          constraints: ["No external data or provider calls"],
+          evaluationCriteria: ["Expected calibration error versus fixed temperature scaling"],
+          baseline: "Fixed temperature scaling fitted on the source validation split",
+          evidenceNotes: [{ title: "Provided context", finding: "Calibration can degrade under shift.", limitation: "No citation was supplied." }],
+          outputStyle: "detailed",
           maxGenerations: 2,
           reflections: 2,
         },
@@ -63,8 +69,21 @@ describe("streamable HTTP MCP", () => {
           generatedCodeExecution: false,
           scientificallyValidated: false,
         },
-        ideas: [{}, {}],
+        workflow: {
+          schemaVersion: "0.2.0",
+          recommendation: { planningScore: expect.any(Number) },
+          ideas: [{ "Planning Score": { label: "heuristic-mock-score" } }, {}],
+          artifacts: [{}, {}, {}, {}],
+          stages: [{ status: "succeeded" }, {}, {}, {}],
+        },
       });
+      const structured = workflow.structuredContent as { workflow: { artifacts: Array<{ name: string }> } };
+      expect(structured.workflow.artifacts.map((artifact) => artifact.name)).toEqual([
+        "research-brief.md",
+        "ideation-summary.md",
+        "run-manifest.json",
+        "AI_GENERATION_DISCLOSURE.md",
+      ]);
       expect(JSON.stringify(workflow.structuredContent)).toContain("autonomously generated or produced");
       expect(await readdir(path.join(root, "tenants"))).toEqual([]);
     } finally {
@@ -89,7 +108,7 @@ describe("streamable HTTP MCP", () => {
       httpServer.once("error", reject);
     });
     const { port } = httpServer.address() as AddressInfo;
-    const client = new Client({ name: "researcher-ai-http-test", version: "0.1.0" });
+    const client = new Client({ name: "researcher-ai-http-test", version: "0.2.0" });
     const transport = new StreamableHTTPClientTransport(new URL(`http://127.0.0.1:${port}/mcp`), {
       requestInit: { headers: { "x-researcher-tenant": "http-test-tenant" } },
     });
@@ -97,8 +116,10 @@ describe("streamable HTTP MCP", () => {
     try {
       await client.connect(transport as unknown as Transport);
       const tools = await client.listTools();
-      expect(tools.tools).toHaveLength(10);
-      const widget = await client.readResource({ uri: "ui://researcher-ai/dashboard.html" });
+      expect(tools.tools).toHaveLength(11);
+      expect(tools.tools.every((tool) => tool.outputSchema)).toBe(true);
+      expect(tools.tools.map((tool) => tool.name)).toContain("get_project_dashboard");
+      const widget = await client.readResource({ uri: "ui://researcher-ai/dashboard-v2.html" });
       expect(widget.contents[0]?._meta).toMatchObject({
         ui: { domain: "https://researcher-ai-mcp.onrender.com" },
       });
@@ -127,8 +148,8 @@ describe("streamable HTTP MCP", () => {
     });
     const { port } = httpServer.address() as AddressInfo;
     const endpoint = new URL(`http://127.0.0.1:${port}/mcp`);
-    const firstClient = new Client({ name: "researcher-ai-session-a", version: "0.1.0" });
-    const secondClient = new Client({ name: "researcher-ai-session-b", version: "0.1.0" });
+    const firstClient = new Client({ name: "researcher-ai-session-a", version: "0.2.0" });
+    const secondClient = new Client({ name: "researcher-ai-session-b", version: "0.2.0" });
     const firstTransport = new StreamableHTTPClientTransport(endpoint, {
       requestInit: { headers: { "x-researcher-tenant": "attempted-shared-tenant" } },
     });

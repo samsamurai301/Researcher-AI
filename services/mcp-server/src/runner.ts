@@ -9,6 +9,7 @@ import type {
   IdeationInput,
   JobOutput,
   ProgressUpdate,
+  ResearchIdea,
   ResearchJob,
   ResearchProject,
 } from "./types.js";
@@ -70,6 +71,108 @@ function safeModel(model: string): string {
   return model;
 }
 
+function redactSensitive(text: string, environment: NodeJS.ProcessEnv): string {
+  let redacted = text
+    .replace(/\b(?:sk-[A-Za-z0-9_-]{12,}|AIza[A-Za-z0-9_-]{20,}|AKIA[A-Z0-9]{12,})\b/g, "[redacted-secret]")
+    .replace(/\b(?:api[_-]?key|access[_-]?token|secret)\s*[=:]\s*[^\s,;]+/gi, "$1=[redacted-secret]");
+  for (const key of PROVIDER_ENVIRONMENT_KEYS) {
+    const value = environment[key];
+    if (value && value.length >= 8) redacted = redacted.replaceAll(value, `[redacted-${key.toLowerCase()}]`);
+  }
+  return redacted;
+}
+
+const MOCK_DIRECTIONS = [
+  {
+    slug: "controlled_baseline",
+    label: "Controlled baseline study",
+    method: "Compare a pre-registered intervention with the simplest credible baseline under identical data splits and reporting rules.",
+    experiment: "Run a controlled baseline comparison with fixed seeds and confidence intervals.",
+    risk: "A narrow benchmark may not represent real deployment conditions.",
+  },
+  {
+    slug: "robustness_stress_test",
+    label: "Robustness stress test",
+    method: "Stress-test the hypothesis across controlled shifts, noise levels, and subgroup slices while holding the evaluation protocol fixed.",
+    experiment: "Sweep pre-declared stress conditions and report performance degradation curves.",
+    risk: "Synthetic stress conditions may omit important real-world failure modes.",
+  },
+  {
+    slug: "mechanism_ablation",
+    label: "Mechanism and ablation study",
+    method: "Isolate the proposed mechanism with component ablations, negative controls, and sensitivity analysis.",
+    experiment: "Remove or perturb each proposed mechanism and compare the change against negative controls.",
+    risk: "Ablations can reveal association without establishing a complete causal explanation.",
+  },
+] as const;
+
+function mockIdeas(project: ResearchProject, count: number): ResearchIdea[] {
+  const slug = project.title.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
+  const metrics = project.brief.evaluationCriteria.length > 0
+    ? project.brief.evaluationCriteria
+    : ["Primary effect versus baseline", "Uncertainty or confidence interval", "Failure rate by evaluation slice"];
+  const baseline = project.brief.baseline ?? "The simplest credible non-adaptive or current-practice baseline.";
+  return Array.from({ length: Math.min(count, MOCK_DIRECTIONS.length) }, (_, index) => {
+    const direction = MOCK_DIRECTIONS[index]!;
+    const novelty = 68 + index * 7;
+    const feasibility = 86 - index * 6;
+    const clarity = 90 - index * 3;
+    const testability = 88 - index * 2;
+    const overall = Math.round((novelty + feasibility + clarity + testability) / 4);
+    return {
+      Name: `mock_${direction.slug}_${slug}`,
+      Title: `${project.title}: ${direction.label}`,
+      "Short Hypothesis": project.tldr,
+      "Related Work": "No live literature search was performed in mock mode; validate novelty and citations independently before execution.",
+      Abstract: project.abstract,
+      Method: direction.method,
+      Baseline: baseline,
+      Experiments: [
+        direction.experiment,
+        "Repeat across at least three deterministic seeds or folds.",
+        "Report uncertainty, subgroup behavior, and all pre-declared failure cases.",
+      ],
+      "Evaluation Metrics": metrics,
+      "Falsification Criteria": [
+        "The primary criterion does not improve over the declared baseline beyond uncertainty.",
+        "The effect reverses or becomes practically negligible under a pre-declared robustness slice.",
+      ],
+      "Expected Artifacts": ["configuration manifest", "per-run metrics", "comparison table", "failure-case report"],
+      "Risk Factors and Limitations": [
+        direction.risk,
+        ...project.brief.constraints,
+        "This is a deterministic planning artifact, not a scientifically evaluated result.",
+      ],
+      "Planning Score": { novelty, feasibility, clarity, testability, overall, label: "heuristic-mock-score" },
+    };
+  });
+}
+
+function ideationSummary(project: ResearchProject, ideas: ResearchIdea[], reflections: number): string {
+  const ranking = [...ideas]
+    .sort((left, right) => right["Planning Score"].overall - left["Planning Score"].overall)
+    .map((idea, index) => `${index + 1}. **${idea.Title}** — heuristic planning score ${idea["Planning Score"].overall}/100`)
+    .join("\n");
+  return [
+    "# Mock ideation report",
+    "",
+    `Research question: ${project.tldr}`,
+    "",
+    "## Ranked directions",
+    ranking,
+    "",
+    "## Refinement trace",
+    ...Array.from({ length: reflections }, (_, index) =>
+      `- Round ${index + 1}: checked baseline clarity, measurable criteria, falsification conditions, and stated limitations.`),
+    "",
+    "> Scores are deterministic planning heuristics. They are not evidence, peer review, or scientific validation.",
+    "",
+    "## Machine-generation disclosure",
+    DISCLOSURE_TEXT,
+    "",
+  ].join("\n");
+}
+
 export class ResearchRunner {
   private readonly active = new Map<string, ActiveProcess>();
 
@@ -117,24 +220,43 @@ export class ResearchRunner {
       const input = job.input as IdeationInput;
       await onProgress({ stage: "literature-planning", message: "Drafting and checking candidate research directions.", percent: 55 });
       await sleep(this.config.mockDelayMs, signal);
-      const ideas = Array.from({ length: Math.min(input.maxGenerations, 3) }, (_, index) => ({
-        Name: `mock_${index + 1}_${project.title.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "")}`,
-        Title: `${project.title}: testable direction ${index + 1}`,
-        "Short Hypothesis": `${project.tldr} This mock proposal verifies the integration without calling a model provider.`,
-        "Related Work": "Replace mock mode with an isolated native or Docker runner to perform live literature checks.",
-        Abstract: project.abstract,
-        Experiments: ["Establish a baseline", "Run a controlled intervention", "Report uncertainty and failure cases"],
-        "Risk Factors and Limitations": ["Mock result", "Requires independent scientific review"],
-      }));
+      const ideas = mockIdeas(project, input.maxGenerations);
       await writeFile(path.join(projectDirectory, "topic.json"), `${JSON.stringify(ideas, null, 2)}\n`, "utf8");
-      await writeFile(path.join(artifactDirectory, "ideation-summary.md"), `# Mock ideation complete\n\n${DISCLOSURE_TEXT}\n`, "utf8");
+      await writeFile(path.join(artifactDirectory, "ideation-summary.md"), ideationSummary(project, ideas, input.reflections), "utf8");
+      await writeFile(
+        path.join(artifactDirectory, "run-manifest.json"),
+        `${JSON.stringify({
+          schemaVersion: "0.2.0",
+          mode: "mock",
+          deterministic: true,
+          modelCalls: false,
+          externalDataAccess: false,
+          generatedCodeExecution: false,
+          scientificallyValidated: false,
+          parameters: { maxGenerations: input.maxGenerations, reflections: input.reflections },
+          disclosure: DISCLOSURE_TEXT,
+        }, null, 2)}\n`,
+        "utf8",
+      );
+      await writeFile(
+        path.join(artifactDirectory, "AI_GENERATION_DISCLOSURE.md"),
+        `# AI-generation disclosure\n\n${DISCLOSURE_TEXT}\n`,
+        "utf8",
+      );
       await this.store.updateProject(tenantId, project.id, { ideasFile: "topic.json" });
       await onProgress({ stage: "complete", message: `Generated ${ideas.length} mock research ideas.`, percent: 100 });
       return {
         summary: `Generated ${ideas.length} mock research ideas.`,
         artifactRoot: path.relative(projectDirectory, artifactDirectory).split(path.sep).join("/"),
         files: await collectFiles(artifactDirectory),
-        metadata: { mock: true, ideaCount: ideas.length },
+        metadata: {
+          mock: true,
+          ideaCount: ideas.length,
+          recommendedIdea: ideas
+            .map((idea, ideaIndex) => ({ ideaIndex, title: idea.Title, planningScore: idea["Planning Score"].overall }))
+            .sort((left, right) => right.planningScore - left.planningScore)[0],
+          scoreMeaning: "Deterministic planning heuristic; not scientific evidence.",
+        },
       };
     }
 
@@ -391,7 +513,10 @@ export class ResearchRunner {
   ): Promise<void> {
     await mkdir(path.dirname(options.logPath), { recursive: true });
     const log = await import("node:fs").then(({ createWriteStream }) => createWriteStream(options.logPath, { flags: "a", mode: 0o600 }));
-    log.write(`\n[researcher-ai] command: ${command} ${args.join(" ")}\n`);
+    const commandPreview = [path.basename(command), ...args.map((argument) =>
+      path.isAbsolute(argument) ? `[internal-path:${path.basename(argument)}]` : argument
+    )].join(" ");
+    log.write(`\n[researcher-ai] command: ${commandPreview}\n`);
     if (options.signal.aborted) {
       log.end();
       throw new Error("Job was cancelled before the research process started.");
@@ -405,11 +530,12 @@ export class ResearchRunner {
       let lineBuffer = "";
 
       const consume = (chunk: Buffer, stream: "stdout" | "stderr") => {
-        log.write(chunk);
         lineBuffer += chunk.toString("utf8");
         const lines = lineBuffer.split(/\r?\n/);
         lineBuffer = lines.pop() ?? "";
-        const latest = lines.at(-1)?.trim();
+        const safeLines = lines.map((line) => redactSensitive(line, options.env));
+        for (const line of safeLines) log.write(`[${stream}] ${line}\n`);
+        const latest = safeLines.at(-1)?.trim();
         if (latest) {
           const message = latest.length > 280 ? `${latest.slice(0, 277)}…` : latest;
           void options.onProgress({
@@ -429,6 +555,7 @@ export class ResearchRunner {
       });
       child.once("exit", (code, signalName) => {
         this.active.delete(jobId);
+        if (lineBuffer) log.write(`[output] ${redactSensitive(lineBuffer, options.env)}\n`);
         log.end();
         if (options.signal.aborted) reject(new Error("Job was cancelled."));
         else if (code === 0) resolve();

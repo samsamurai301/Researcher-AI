@@ -1,10 +1,40 @@
 export const DISCLOSURE_TEXT =
   "This manuscript was autonomously generated or produced using The AI Scientist. Human reviewers remain responsible for verification, attribution, and publication decisions.";
+export const SERVICE_VERSION = "0.2.0";
 
 export type RunnerMode = "mock" | "native" | "docker";
 export type AuthMode = "none" | "session" | "static" | "oidc";
 export type JobKind = "ideation" | "experiment";
 export type JobStatus = "queued" | "running" | "succeeded" | "failed" | "cancelled";
+
+export interface EvidenceNote {
+  title: string;
+  finding: string;
+  limitation?: string | undefined;
+}
+
+export interface ResearchBrief {
+  question: string;
+  objectives: string[];
+  constraints: string[];
+  evaluationCriteria: string[];
+  baseline?: string | undefined;
+  evidenceNotes: EvidenceNote[];
+  outputStyle: "concise" | "balanced" | "detailed";
+}
+
+export interface ResearchProjectInput {
+  title: string;
+  keywords: string[];
+  tldr: string;
+  abstract: string;
+  objectives?: string[] | undefined;
+  constraints?: string[] | undefined;
+  evaluationCriteria?: string[] | undefined;
+  baseline?: string | undefined;
+  evidenceNotes?: EvidenceNote[] | undefined;
+  outputStyle?: ResearchBrief["outputStyle"] | undefined;
+}
 
 export interface ResearchProject {
   id: string;
@@ -12,6 +42,7 @@ export interface ResearchProject {
   keywords: string[];
   tldr: string;
   abstract: string;
+  brief: ResearchBrief;
   disclosure: string;
   createdAt: string;
   updatedAt: string;
@@ -86,4 +117,29 @@ export interface ProgressUpdate {
   stage: string;
   message: string;
   percent?: number;
+}
+
+export interface PlanningScore {
+  novelty: number;
+  feasibility: number;
+  clarity: number;
+  testability: number;
+  overall: number;
+  label: "heuristic-mock-score";
+}
+
+export interface ResearchIdea {
+  Name: string;
+  Title: string;
+  "Short Hypothesis": string;
+  "Related Work": string;
+  Abstract: string;
+  Method: string;
+  Baseline: string;
+  Experiments: string[];
+  "Evaluation Metrics": string[];
+  "Falsification Criteria": string[];
+  "Expected Artifacts": string[];
+  "Risk Factors and Limitations": string[];
+  "Planning Score": PlanningScore;
 }

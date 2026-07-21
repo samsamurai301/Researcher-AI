@@ -1,7 +1,7 @@
 {
   "name": "researcher-ai",
-  "version": "0.1.0",
-  "description": "Run auditable AI-assisted research ideation and sandboxed AI Scientist v2 experiments.",
+  "version": "0.2.0",
+  "description": "Plan, rank, and audit AI-assisted research with rich briefs and sandboxed AI Scientist v2 experiments.",
   "author": {
     "name": "Sohangkumar Patel"
   },
@@ -50,7 +50,7 @@
   "interface": {
     "displayName": "Researcher AI",
     "shortDescription": "Auditable autonomous research workflows",
-    "longDescription": "Create research projects, generate structured ideas, run sandboxed AI Scientist v2 experiments, inspect progress, and review disclosure-preserving artifacts from ChatGPT or Codex.",
+    "longDescription": "Create rich research briefs, generate and rank falsifiable directions, review a unified project dashboard, run sandboxed AI Scientist v2 experiments, and inspect disclosure-preserving artifacts from ChatGPT or Codex.",
     "developerName": "Sohangkumar Patel",
     "category": "Productivity",
     "capabilities": [
@@ -61,6 +61,7 @@
     "defaultPrompt": [
       "Create an auditable research project",
       "Generate and compare research ideas",
+      "Build a research brief with baselines and falsification criteria",
       "Review my latest experiment artifacts"
     ],
     "brandColor": "#173F30",

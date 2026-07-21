@@ -16,7 +16,7 @@ const transport = new StdioServerTransport();
 await server.connect(transport);
 
 const shutdown = () => {
-  void server.close().finally(() => process.exit());
+  void runtime.jobs.shutdown().finally(() => server.close()).finally(() => process.exit());
 };
 process.once("SIGINT", shutdown);
 process.once("SIGTERM", shutdown);

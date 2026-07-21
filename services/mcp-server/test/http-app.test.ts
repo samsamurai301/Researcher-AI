@@ -26,7 +26,7 @@ describe("HTTP service boundary", () => {
     });
     const app = createHttpApp(await createRuntime(config));
 
-    await request(app).get("/health").expect(200, { status: "ok", version: "0.1.0" });
+    await request(app).get("/health").expect(200, { status: "ok", version: "0.2.0" });
     const ready = await request(app).get("/ready").expect(200);
     expect(ready.body).toMatchObject({ status: "ready", runnerMode: "mock", authMode: "static" });
     await request(app).get("/.well-known/openai-apps-challenge").expect(200, "openai-domain-verification-token");

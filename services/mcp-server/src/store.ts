@@ -21,6 +21,7 @@ import type {
   JobKind,
   ResearchJob,
   ResearchProject,
+  ResearchProjectInput,
 } from "./types.js";
 import { DISCLOSURE_TEXT } from "./types.js";
 
@@ -78,6 +79,16 @@ async function parseJson<T>(filePath: string): Promise<T> {
 }
 
 function topicMarkdown(project: ResearchProject): string {
+  const list = (values: string[], fallback: string) => values.length > 0
+    ? values.map((value) => `- ${value}`).join("\n")
+    : `- ${fallback}`;
+  const evidence = project.brief.evidenceNotes.length > 0
+    ? project.brief.evidenceNotes.map((note) => [
+      `### ${note.title}`,
+      note.finding,
+      note.limitation ? `Limitation: ${note.limitation}` : undefined,
+    ].filter(Boolean).join("\n\n")).join("\n\n")
+    : "No source notes were supplied. Any literature claims require independent verification.";
   return [
     `# ${project.title}`,
     "",
@@ -90,10 +101,46 @@ function topicMarkdown(project: ResearchProject): string {
     "## Abstract",
     project.abstract,
     "",
+    "## Objectives",
+    list(project.brief.objectives, "Define a measurable answer to the research question."),
+    "",
+    "## Constraints",
+    list(project.brief.constraints, "No additional constraints supplied."),
+    "",
+    "## Evaluation criteria",
+    list(project.brief.evaluationCriteria, "Compare against a stated baseline and report uncertainty."),
+    "",
+    "## Baseline",
+    project.brief.baseline ?? "Establish the simplest credible baseline before testing the intervention.",
+    "",
+    "## Supplied evidence notes",
+    evidence,
+    "",
+    `## Requested output style\n${project.brief.outputStyle}`,
+    "",
     "## Responsible-use disclosure",
     project.disclosure,
     "",
   ].join("\n");
+}
+
+function compactStrings(values: string[] | undefined): string[] {
+  return [...new Set((values ?? []).map((value) => value.trim()).filter(Boolean))];
+}
+
+function normalizeProject(project: ResearchProject): ResearchProject {
+  if (project.brief) return project;
+  return {
+    ...project,
+    brief: {
+      question: project.tldr,
+      objectives: [],
+      constraints: [],
+      evaluationCriteria: [],
+      evidenceNotes: [],
+      outputStyle: "balanced",
+    },
+  };
 }
 
 export class ResearchStore {
@@ -128,7 +175,7 @@ export class ResearchStore {
 
   async createProject(
     tenantId: string,
-    input: Pick<ResearchProject, "title" | "keywords" | "tldr" | "abstract">,
+    input: ResearchProjectInput,
   ): Promise<ResearchProject> {
     const timestamp = now();
     const project: ResearchProject = {
@@ -137,6 +184,19 @@ export class ResearchStore {
       keywords: [...new Set(input.keywords.map((keyword) => keyword.trim()).filter(Boolean))],
       tldr: input.tldr.trim(),
       abstract: input.abstract.trim(),
+      brief: {
+        question: input.tldr.trim(),
+        objectives: compactStrings(input.objectives),
+        constraints: compactStrings(input.constraints),
+        evaluationCriteria: compactStrings(input.evaluationCriteria),
+        ...(input.baseline?.trim() ? { baseline: input.baseline.trim() } : {}),
+        evidenceNotes: (input.evidenceNotes ?? []).map((note) => ({
+          title: note.title.trim(),
+          finding: note.finding.trim(),
+          ...(note.limitation?.trim() ? { limitation: note.limitation.trim() } : {}),
+        })),
+        outputStyle: input.outputStyle ?? "balanced",
+      },
       disclosure: DISCLOSURE_TEXT,
       createdAt: timestamp,
       updatedAt: timestamp,
@@ -151,7 +211,7 @@ export class ResearchStore {
   async getProject(tenantId: string, projectId: string): Promise<ResearchProject> {
     const filePath = path.join(this.projectDirectory(tenantId, projectId), "project.json");
     try {
-      return await parseJson<ResearchProject>(filePath);
+      return normalizeProject(await parseJson<ResearchProject>(filePath));
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code === "ENOENT") throw new Error("Research project was not found.");
       throw error;
@@ -181,7 +241,7 @@ export class ResearchStore {
     const projects = await Promise.all(
       entries
         .filter((entry) => entry.isDirectory() && UUID_PATTERN.test(entry.name))
-        .map((entry) => parseJson<ResearchProject>(path.join(projectsDirectory, entry.name, "project.json"))),
+        .map(async (entry) => normalizeProject(await parseJson<ResearchProject>(path.join(projectsDirectory, entry.name, "project.json")))),
     );
     return projects.sort((left, right) => right.updatedAt.localeCompare(left.updatedAt));
   }
@@ -215,6 +275,22 @@ export class ResearchStore {
       if ((error as NodeJS.ErrnoException).code === "ENOENT") throw new Error("Research job was not found.");
       throw error;
     }
+  }
+
+  async listJobs(tenantId: string, projectId: string): Promise<ResearchJob[]> {
+    const jobsDirectory = path.join(this.projectDirectory(tenantId, projectId), "jobs");
+    await this.getProject(tenantId, projectId);
+    let entries;
+    try {
+      entries = await readdir(jobsDirectory, { withFileTypes: true });
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === "ENOENT") return [];
+      throw error;
+    }
+    const jobs = await Promise.all(entries
+      .filter((entry) => entry.isDirectory() && UUID_PATTERN.test(entry.name))
+      .map((entry) => parseJson<ResearchJob>(path.join(jobsDirectory, entry.name, "job.json"))));
+    return jobs.sort((left, right) => right.createdAt.localeCompare(left.createdAt));
   }
 
   async updateJob(

@@ -67,7 +67,7 @@ export function loadConfig(environment: NodeJS.ProcessEnv = process.env): Servic
     mockDelayMs: positiveInteger(environment.RESEARCHER_MOCK_DELAY_MS, 40),
     aiScientistRoot: path.resolve(environment.AI_SCIENTIST_ROOT ?? "vendor/ai-scientist-v2"),
     pythonBin: environment.PYTHON_BIN ?? "python3",
-    dockerImage: environment.RESEARCHER_DOCKER_IMAGE ?? "researcher-ai-scientist:0.1.0",
+    dockerImage: environment.RESEARCHER_DOCKER_IMAGE ?? "researcher-ai-scientist:0.2.0",
     dockerPythonBin: environment.RESEARCHER_DOCKER_PYTHON_BIN ?? "python3",
     dockerGpus: environment.RESEARCHER_DOCKER_GPUS ?? "all",
     dockerCpus: environment.RESEARCHER_DOCKER_CPUS ?? "8",
