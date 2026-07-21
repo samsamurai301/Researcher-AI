@@ -9,6 +9,7 @@ import { authContext, authenticationMiddleware, createAuthenticator, type AuthCo
 import { PRIVACY_HTML, TERMS_HTML } from "./legal.js";
 import { createResearcherMcpServer } from "./mcp.js";
 import type { ServiceRuntime } from "./runtime.js";
+import { SERVICE_VERSION } from "./types.js";
 
 type ResearcherServer = ReturnType<typeof createResearcherMcpServer>;
 
@@ -46,6 +47,7 @@ export function createHttpApp(runtime: ServiceRuntime): Express {
   app.locals.closeMcpSessions = async () => {
     clearInterval(sweepInterval);
     await Promise.all([...sessions.keys()].map((sessionId) => closeSession(sessionId, true)));
+    await runtime.jobs.shutdown();
   };
 
   app.disable("x-powered-by");
@@ -63,7 +65,7 @@ export function createHttpApp(runtime: ServiceRuntime): Express {
   app.get("/terms", (_request, response) => response.type("html").send(TERMS_HTML));
 
   app.get("/health", (_request, response) => {
-    response.json({ status: "ok", version: "0.1.0" });
+    response.json({ status: "ok", version: SERVICE_VERSION });
   });
   app.get("/ready", (_request, response) => {
     response.json({
@@ -71,6 +73,8 @@ export function createHttpApp(runtime: ServiceRuntime): Express {
       runnerMode: runtime.config.runnerMode,
       authMode: runtime.config.authMode,
       upstreamCommit: "96bd51617cfdbb494a9fc283af00fe090edfae48",
+      version: SERVICE_VERSION,
+      queue: runtime.jobs.snapshot(),
     });
   });
   app.get("/.well-known/oauth-protected-resource", (_request, response) => {
@@ -141,7 +145,7 @@ export function createHttpApp(runtime: ServiceRuntime): Express {
       await server.connect(transport as unknown as Transport);
       await transport.handleRequest(request, response, request.body);
     } catch (error) {
-      console.error("MCP request failed", error);
+      console.error("MCP request failed", { errorType: error instanceof Error ? error.name : "UnknownError" });
       if (!response.headersSent) {
         response.status(500).json({
           jsonrpc: "2.0",

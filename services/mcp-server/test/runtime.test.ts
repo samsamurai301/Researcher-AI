@@ -48,6 +48,10 @@ describe("mock research runtime", () => {
       keywords: ["integration", "reproducibility"],
       tldr: "The integration produces auditable state without a provider call.",
       abstract: "Verify the complete queue, storage, artifact, and disclosure path using deterministic mock execution.",
+      objectives: ["Verify deterministic ranking", "Preserve an audit trail"],
+      constraints: ["No provider calls"],
+      evaluationCriteria: ["Repeatable proposal order", "Disclosure present"],
+      baseline: "The v0.1 thin mock proposal",
     });
 
     const job = await runtime.jobs.enqueue(tenantId, project.id, "ideation", {
@@ -61,11 +65,44 @@ describe("mock research runtime", () => {
 
     expect(completed.status).toBe("succeeded");
     expect(ideas).toHaveLength(2);
+    expect(ideas[0]).toMatchObject({
+      Method: expect.any(String),
+      "Falsification Criteria": expect.any(Array),
+      "Planning Score": { label: "heuristic-mock-score", overall: expect.any(Number) },
+    });
+    await expect(runtime.store.getProject(tenantId, project.id)).resolves.toMatchObject({
+      brief: { objectives: ["Verify deterministic ranking", "Preserve an audit trail"] },
+    });
     expect(artifacts.some((artifact) => artifact.path.endsWith("ideation-summary.md"))).toBe(true);
+    expect(artifacts.some((artifact) => artifact.path.endsWith("run-manifest.json"))).toBe(true);
     const summary = artifacts.find((artifact) => artifact.path.endsWith("ideation-summary.md"));
     expect(summary).toBeDefined();
     const content = await runtime.store.readArtifact(tenantId, project.id, summary!.path);
     expect(content.content).toContain(DISCLOSURE_TEXT);
+  });
+
+  it("deduplicates identical retry calls while a job is active or newly completed", async () => {
+    const root = await temporaryRoot();
+    const runtime = await createRuntime(loadConfig({
+      RESEARCHER_DATA_DIR: root,
+      RESEARCHER_RUNNER: "mock",
+      RESEARCHER_MOCK_DELAY_MS: "20",
+    }));
+    const tenantId = "retry-tenant";
+    const project = await runtime.store.createProject(tenantId, {
+      title: "Retry-safe ideation",
+      keywords: ["retries", "stability"],
+      tldr: "Identical immediate retry calls resolve to one research job.",
+      abstract: "Verify that model or network retries do not duplicate an active or newly completed ideation job.",
+    });
+    const input = { model: "gpt-4.1", maxGenerations: 2, reflections: 2 };
+    const first = await runtime.jobs.enqueue(tenantId, project.id, "ideation", input);
+    const activeRetry = await runtime.jobs.enqueue(tenantId, project.id, "ideation", input);
+    expect(activeRetry.id).toBe(first.id);
+    await waitForTerminalJob(runtime, tenantId, project.id, first.id);
+    const completedRetry = await runtime.jobs.enqueue(tenantId, project.id, "ideation", input);
+    expect(completedRetry.id).toBe(first.id);
+    await expect(runtime.store.listJobs(tenantId, project.id)).resolves.toHaveLength(1);
   });
 
   it("keeps a cancelled running job cancelled", async () => {

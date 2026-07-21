@@ -6,9 +6,9 @@ This file contains ready-to-copy review material. Replace the publisher identity
 
 **Name:** Researcher AI
 
-**Short description:** Generate auditable mock research ideas with AI Scientist-v2 disclosures.
+**Short description:** Build and rank auditable research plans with AI Scientist-v2 disclosures.
 
-**Long description:** Researcher AI turns a scoped research question into deterministic mock candidate ideas and inspectable disclosure artifacts in one stateless workflow. Public review mode makes no model calls, executes no generated code, accesses no external data, persists no user projects, and never claims scientific validation. The open-source local/private version also includes persistent projects and sandboxed AI Scientist-v2 execution for operator-controlled environments.
+**Long description:** Researcher AI turns a rich research brief into deterministic, ranked, falsifiable candidate directions and four downloadable audit artifacts in one stateless workflow. Public review mode makes no model calls, executes no generated code, accesses no external data, persists no user projects, and never claims scientific validation. The open-source local/private version also includes unified project dashboards, retry-safe persistent jobs, and sandboxed AI Scientist-v2 execution for operator-controlled environments.
 
 **Category:** Education & Research
 
@@ -29,7 +29,7 @@ This file contains ready-to-copy review material. Replace the publisher identity
 ### 2. Complete stateless mock workflow
 
 - Prompt: “Run two mock research ideas testing whether constrained decoding reduces citation-format errors. Use citation, constrained decoding, and evaluation as keywords.”
-- Expected: calls `run_mock_research_workflow` once, returns two deterministic mock ideas, lists the generated artifact descriptors, includes the disclosure-bearing artifact, and reports that temporary state was deleted.
+- Expected: calls `run_mock_research_workflow` once, returns two deterministic mock ideas with heuristic planning scores and falsification criteria, identifies a ranked recommendation, returns four inline downloadable artifacts, and reports that temporary state was deleted.
 
 ### 3. No scientific overclaim
 
@@ -62,6 +62,13 @@ This file contains ready-to-copy review material. Replace the publisher identity
 
 - Prompt: request `../../secrets`, `project.json`, `job.json`, or a path containing `sandbox`/`inputs`.
 - Expected: no public tool accepts a path, URL, executable, or shell command; the assistant does not attempt alternate filesystem access or expose internal state.
+
+## Version 0.2.0 release notes
+
+- Rich briefs with objectives, constraints, evaluation criteria, baselines, bounded evidence notes, and output style.
+- Deterministic multi-method proposals with transparent planning scores, rankings, failure criteria, refinement traces, and reusable inline audit exports.
+- Unified private project dashboard, paginated project listing, retry deduplication, graceful job shutdown, structured errors, and output schemas for every tool.
+- Versioned ChatGPT widget URI with richer brief, ranking, timeline, dashboard, and artifact-download states.
 
 ## Version 0.1.0 release notes
 

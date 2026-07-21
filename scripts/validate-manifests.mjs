@@ -11,6 +11,9 @@ const claude = await readJson("plugins/researcher-ai/.claude-plugin/plugin.json"
 const codexMarket = await readJson(".agents/plugins/marketplace.json");
 const claudeMarket = await readJson(".claude-plugin/marketplace.json");
 const mcp = await readJson("plugins/researcher-ai/.mcp.json");
+const rootPackage = await readJson("package.json");
+const widgetPackage = await readJson("apps/widget/package.json");
+const serverPackage = await readJson("services/mcp-server/package.json");
 
 const errors = [];
 const expectedName = path.basename(pluginRoot);
@@ -19,6 +22,14 @@ for (const [label, manifest] of [["Codex", codex], ["Claude", claude]]) {
   if (!/^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$/.test(manifest.version ?? "")) {
     errors.push(`${label} manifest version must be strict semver`);
   }
+}
+for (const [label, version] of [
+  ["Codex manifest", codex.version],
+  ["Claude manifest", claude.version],
+  ["widget package", widgetPackage.version],
+  ["MCP server package", serverPackage.version],
+]) {
+  if (version !== rootPackage.version) errors.push(`${label} version ${version} must match root version ${rootPackage.version}`);
 }
 if (!codexMarket.plugins?.some((entry) => entry.name === expectedName && entry.source?.path === "./plugins/researcher-ai")) {
   errors.push("Codex marketplace does not point to the plugin");

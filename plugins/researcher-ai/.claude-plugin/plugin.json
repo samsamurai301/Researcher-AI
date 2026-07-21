@@ -1,7 +1,7 @@
 {
   "name": "researcher-ai",
-  "version": "0.1.0",
-  "description": "Auditable research ideation and sandboxed AI Scientist v2 experiments for Claude Code.",
+  "version": "0.2.0",
+  "description": "Rich research briefs, ranked ideation, project dashboards, and sandboxed AI Scientist v2 experiments for Claude Code.",
   "author": {
     "name": "Sohangkumar Patel"
   },
